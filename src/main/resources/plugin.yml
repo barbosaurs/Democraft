@@ -1,0 +1,15 @@
+name: Nations
+version: '${project.version}'
+main: me.barbosaur.nations.Nations
+api-version: 1.19
+commands:
+  state:
+    description: A command
+    usage: /<command>
+  calibrate:
+    description: Калибровать РСЗО
+    usage: /<command>
+  discord:
+    description: Привязать дискорд
+    usage: /<command> <link/code>
+depend: [dynmap]
