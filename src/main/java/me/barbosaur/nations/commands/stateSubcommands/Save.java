@@ -1,21 +1,22 @@
 package me.barbosaur.nations.commands.stateSubcommands;
 
 import me.barbosaur.nations.Lang;
+import me.barbosaur.nations.SaveLoad;
 import me.barbosaur.nations.commands.StateSubcommand;
 import org.bukkit.Chunk;
 import org.bukkit.command.CommandSender;
 
-public class Help implements StateSubcommand {
+public class Save implements StateSubcommand {
+
     @Override
     public void executeCommand(String[] args, CommandSender sender, String p, String subcmd, Chunk chunk){
-
-        if(args.length > 1 && args[1].equalsIgnoreCase("reset")){
-            sender.sendMessage(Lang.getLang("tips_reset"));
-            me.barbosaur.nations.Help.tipsLevel.put(sender.getName(), 1);
+        if(!sender.hasPermission("state.save")){
+            sender.sendMessage(Lang.getLang("not_enough_perms"));
             return;
         }
 
-        sender.sendMessage(Lang.getLang("cmd_list"));
+        SaveLoad.saveStates();
+        sender.sendMessage(Lang.getLang("saved"));
     }
 
 }

@@ -1,5 +1,6 @@
 package me.barbosaur.nations.commands.stateSubcommands;
 
+import me.barbosaur.nations.Lang;
 import me.barbosaur.nations.Nations;
 import me.barbosaur.nations.commands.StateSubcommand;
 import org.bukkit.Chunk;
@@ -26,7 +27,7 @@ public class ListStates implements StateSubcommand {
             pageCount++;
         }
 
-        String string = "Список стран: \n";
+        String string = Lang.getLang("state_list") + ":\n";
 
         for(int i = 0; i<stateAmount; i++){
             if(((page - 1) * stateAmount + i+1)<=Nations.states.size()) {
@@ -36,7 +37,7 @@ public class ListStates implements StateSubcommand {
             }
         }
 
-        string += ("Страница " + page + "/" + pageCount);
+        string += (Lang.getLang("page") + " " + page + "/" + pageCount);
 
         sender.sendMessage(string);
     }

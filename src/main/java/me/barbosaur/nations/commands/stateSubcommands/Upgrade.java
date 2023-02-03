@@ -1,9 +1,6 @@
 package me.barbosaur.nations.commands.stateSubcommands;
 
-import me.barbosaur.nations.Events;
-import me.barbosaur.nations.Level;
-import me.barbosaur.nations.Nations;
-import me.barbosaur.nations.State;
+import me.barbosaur.nations.*;
 import me.barbosaur.nations.commands.StateSubcommand;
 import org.bukkit.Chunk;
 import org.bukkit.Material;
@@ -11,8 +8,6 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
-
-import java.util.HashMap;
 
 public class Upgrade implements StateSubcommand {
 
@@ -22,13 +17,13 @@ public class Upgrade implements StateSubcommand {
         if(State.IsCitizen(p)){
             for(Level level : Events.levels){
                 if(getLevel(State.getLevel(p)+1) == null){
-                    sender.sendMessage("У вас максимальный уровень");
+                    sender.sendMessage(Lang.getLang("max_level"));
                     return;
                 }
             }
             for(Material mat : getLevel(State.getLevel(p)+1).toUpgradeTo.keySet()) {
                 if (!player.getInventory().contains(mat, getLevel(State.getLevel(p)+1).toUpgradeTo.get(mat))) {
-                    sender.sendMessage("Не хватает предметов");
+                    sender.sendMessage(Lang.getLang("not_enough_items"));
                     return;
                 }
             }
@@ -38,14 +33,14 @@ public class Upgrade implements StateSubcommand {
             for(State state : Nations.states){
                 if(state.players.contains(p)){
                     state.level++;
-                    sender.sendMessage("Государство прокачано на " + state.level + " уровень");
-                    State.updateMap();
+                    sender.sendMessage(Lang.getLang("state_upgraded", state.level));
+                    DynMap.updateMap();
                     return;
                 }
             }
 
         }else{
-            sender.sendMessage("Вы не являетесь гражданином государства");
+            sender.sendMessage(Lang.getLang("not_citizen"));
         }
     }
 

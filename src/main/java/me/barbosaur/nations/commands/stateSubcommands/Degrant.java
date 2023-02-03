@@ -1,6 +1,8 @@
 package me.barbosaur.nations.commands.stateSubcommands;
 
+import me.barbosaur.nations.Lang;
 import me.barbosaur.nations.Nations;
+import me.barbosaur.nations.libs.Notifications;
 import me.barbosaur.nations.State;
 import me.barbosaur.nations.commands.StateSubcommand;
 import org.bukkit.Chunk;
@@ -10,31 +12,38 @@ public class Degrant implements StateSubcommand {
 
     @Override
     public void executeCommand(String[] args, CommandSender sender, String p, String subcmd, Chunk chunk){
-        if(State.IsCitizen(p)) {
-            if (args.length == 2) {
-                if (State.getPlayerCountry(p).leader.equals(p)) {
-                    if (State.getPlayerCountry(p).players.contains(args[1])) {
-                        if (State.getPlayerCountry(p).leaders.contains(args[1])) {
-                            for(State state : Nations.states){
-                                if(state.leader.equals(p)){
-                                    state.leaders.remove(args[1]);
-                                    sender.sendMessage(args[1] + " был снят с поста соправителя государства");
-                                }
-                            }
-                        }else{
-                            sender.sendMessage("Этот игрок не является соправителем");
-                        }
-                    }else{
-                        sender.sendMessage("Такого игрока нет в вашем государстве");
-                    }
-                }else{
-                    sender.sendMessage("У вас недостаточно прав");
-                }
-            }else{
-                sender.sendMessage("Неверное количество аргументов");
+        if(!State.IsCitizen(p)) {
+            sender.sendMessage(Lang.getLang("not_citizen"));
+            return;
+        }
+
+        if (args.length != 2) {
+            sender.sendMessage(Lang.getLang("incorrect_args"));
+            return;
+        }
+
+        if (!State.getPlayerCountry(p).leader.equals(p)) {
+            sender.sendMessage(Lang.getLang("not_enough_perms"));
+            return;
+        }
+
+        if (!State.getPlayerCountry(p).players.contains(args[1])) {
+            sender.sendMessage(Lang.getLang("no_such_player"));
+            return;
+        }
+
+        if (!State.getPlayerCountry(p).leaders.contains(args[1])) {
+            sender.sendMessage(Lang.getLang("player_not_granted"));
+            return;
+        }
+
+        for(State state : Nations.states){
+            if(!state.leader.equals(p)){
+                continue;
             }
-        }else{
-            sender.sendMessage("Вы не являетесь гражданином государства");
+            state.leaders.remove(args[1]);
+            sender.sendMessage(Lang.getLang("degranted", args[1]));
+            Notifications.notify(args[1], Lang.getLang("you_were_degranted"));
         }
     }
 

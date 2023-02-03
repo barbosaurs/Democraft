@@ -1,3 +1,21 @@
 file-version: 1
+season: 12
 token: 'token here'
+discord_link: "https://discord.gg/D7eB3GjytS"
+map_link: "http://135.181.237.62:25584/"
+state_cooldown_give: 86400
+invasion_cooldown_give: 600
+chunk_take_cooldown_give: 86400
+deletion_cooldown_give: 3600
+state_cooldown_if_left_give: 86400
+tnt_launcher_cooldown_give: 60
+min_players_for_state: 5
+nether_level: 4
+end_level: 5
+tnt_launcher_level: 3
+claim_time: 600
+min_capture_height: 50
+min_capture_percentage: 60
+for_tnt_launcher: "IRON_BLOCK"
+for_tnt_launcher_amount: 32
 levels:

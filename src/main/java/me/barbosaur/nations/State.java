@@ -1,15 +1,14 @@
 package me.barbosaur.nations;
 
+import fr.xephi.authme.api.v3.AuthMeApi;
+import me.barbosaur.nations.libs.Notifications;
 import org.bukkit.Bukkit;
 import org.bukkit.Chunk;
-import org.bukkit.block.Block;
+import org.bukkit.Material;
 import org.bukkit.entity.Player;
-import org.bukkit.scheduler.BukkitRunnable;
-import org.dynmap.markers.AreaMarker;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.ThreadLocalRandom;
 
 public class State {
@@ -27,6 +26,7 @@ public class State {
     public int canTakeChunks;
     public int invasionCooldown;
     public int chunkTakeCooldown;
+    public long roleId;
 
     public State(String name, String leader){
         this.leader = leader;
@@ -44,76 +44,51 @@ public class State {
         this.color = Nations.colors.get(Nations.colors.keySet().toArray()[ThreadLocalRandom.current().nextInt(0, Nations.colors.keySet().size())]);
     }
 
-    public static int stateCooldownGive = 86400;
-    public static int invasionCooldownGive = 600;
-    public static int chunkTakeCooldownGive = 86400;
-    public static int deletionCooldownGive = 3600;
-    public static int stateCooldownIfLeftGive = 86400;
-
     public void notifyAll(String msg){
         for(String s : this.players){
             Notifications.notify(s, msg);
         }
     }
 
-    public static void onStart(){
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                for(State state : Nations.unconfirmedStates){
-                    if(state.deletionCooldown > 0) {
-                        state.deletionCooldown -= 1;
-                    }else{
-                        for(String s : state.players) {
-                            if(!State.IsCitizen(s)) {
-                                Notifications.notify(s, "Ваше неподтвержденное государство было удалено");
-                            }
-                        }
-                        Nations.unconfirmedStates.remove(state);
-                    }
-                }
-                for(String s : Nations.stateCooldown.keySet()) {
-                    if (Nations.stateCooldown.get(s) > 0) {
-                        Nations.stateCooldown.put(s, Nations.stateCooldown.get(s) - 1);
-                    }
-                }
-                for(int i = 0; i < Nations.states.size(); i++){
-                    if(Nations.states.get(i).chunkTakeCooldown > 0){
-                        Nations.states.get(i).chunkTakeCooldown -= 1;
-                        if(Nations.states.get(i).chunkTakeCooldown <= 0){
-                            Nations.states.get(i).canTakeChunks = 5 + (Nations.states.get(i).level + 1) * 3;
-                            Nations.states.get(i).notifyAll("Вы можете занять еще " + (5 + (Nations.states.get(i).level + 1) * 3)
-                                    + " свободных чанков");
-                        }
-                    }
-                    if(Nations.states.get(i).invasionCooldown > 0){
-                        Nations.states.get(i).invasionCooldown -= 1;
-                    }
-                }
-
-                for(Block b : TntLaunchers.launcherCooldown.keySet()){
-                    if(TntLaunchers.launcherCooldown.get(b) > 0) {
-                        TntLaunchers.launcherCooldown.put(b, TntLaunchers.launcherCooldown.get(b) - 1);
-                    }
-                }
-
-            }
-        }.runTaskTimer(Nations.getPlugin(), 20, 20);
-    }
-
-
     public boolean isOnline(int percentage){
 
         List<String> onlinePlayers = new ArrayList<>();
 
         for(Player p : Bukkit.getOnlinePlayers()){
-            if(Objects.equals(getPlayerCountry(p.getDisplayName()), this)){
+            if(this.players.contains(p.getDisplayName()) && AuthMeApi.getInstance().isAuthenticated(p)){
                 onlinePlayers.add(p.getDisplayName());
             }
         }
         System.out.println(percentage/100.0*this.players.size());
         return onlinePlayers.size() >= Math.round(percentage/100.0*this.players.size());
     }
+
+    public List<Player> getPlayers(){
+        List<Player> players = new ArrayList<>();
+        for(String s : this.players){
+            if(Bukkit.getPlayerExact(s) != null) {
+                players.add(Bukkit.getPlayerExact(s));
+            }
+        }
+        return players;
+    }
+
+
+    public static int stateCooldownGive = 86400;
+    public static int invasionCooldownGive = 600;
+    public static int chunkTakeCooldownGive = 86400;
+    public static int deletionCooldownGive = 3600;
+    public static int stateCooldownIfLeftGive = 86400;
+    public static int minimumPlayersForState = 5;
+    public static int netherLevel = 4;
+    public static int endLevel = 5;
+    public static int tntLauncherLevel = 3;
+    public static int claimTime = 600;
+    public static int minCaptureHeight = 50;
+    public static int minCapturePercentage = 60;
+    public static Material forTntLauncher = Material.IRON_BLOCK;
+    public static int forTntLauncherAmount = 32;
+    public static int tntLauncherCooldownGive = 60;
 
 
     public static void replaceStateInList(State remove, State add){
@@ -217,17 +192,14 @@ public class State {
     }
 
     public static boolean ContainsChunk(List<Chunk> list, Chunk chunk){
-
         for(Chunk chunk1 : list){
             if(chunk.getX() == chunk1.getX()){
                 if(chunk.getZ() == chunk1.getZ()){
                     return true;
                 }
             }
-
         }
         return false;
-
     }
 
     public static boolean ChunkEqual(Chunk chunk1, Chunk chunk2){
@@ -239,18 +211,7 @@ public class State {
         return false;
     }
 
-    public List<Player> getPlayers(){
-        List<Player> players = new ArrayList<>();
-        for(String s : this.players){
-            if(Bukkit.getPlayerExact(s) != null) {
-                players.add(Bukkit.getPlayerExact(s));
-            }
-        }
-        return players;
-    }
-
     public static boolean canBreak(String player, Chunk chunk){
-
         for(State state : Nations.states){
             if(ContainsChunk(state.territory, chunk)){
                 if(state.players.contains(player)){
@@ -259,11 +220,7 @@ public class State {
             }
         }
 
-        if(!State.IsOccupied(chunk)){
-            return true;
-        }
-
-        return false;
+        return !State.IsOccupied(chunk);
     }
 
     public static int getLevel(String player){
@@ -273,7 +230,6 @@ public class State {
             return 0;
         }
     }
-
 
     public static boolean IsCitizen(String player){
         for(int i = 0; i<Nations.states.size(); i++){
@@ -293,7 +249,6 @@ public class State {
         return false;
     }
 
-
     public static State getByChunk(Chunk chunk){
         for(State state : Nations.states){
             if(ContainsChunk(state.territory, chunk)){
@@ -303,37 +258,4 @@ public class State {
         }
         return null;
     }
-
-    public static List<AreaMarker> markers = new ArrayList<>();
-
-    public static void updateMap(){
-        for(AreaMarker marker1 : markers){
-            marker1.deleteMarker();
-        }
-        for(int i = 0; i<Nations.states.size(); i++){
-            for(int u = 0; u<Nations.states.get(i).territory.size(); u++){
-
-                int xMin = Nations.states.get(i).territory.get(u).getX() * 16;
-                int zMin = Nations.states.get(i).territory.get(u).getZ() * 16;
-
-                AreaMarker marker = Nations.markerset.createAreaMarker(u+","+Nations.states.get(i).name,
-                        Nations.states.get(i).name + ", уровень: " + Nations.states.get(i).level + ", игроков: " + Nations.states.get(i).players.size(), true,
-                        "world",new double[] {xMin, xMin+16},new double[] {zMin, zMin+16}, false);
-                if(marker != null) {
-                    marker.setFillStyle(0.5, Nations.states.get(i).color);
-                    marker.setLineStyle(0, 0.5, Nations.states.get(i).color);
-                    markers.add(marker);
-                }else{
-                    System.out.println("Null marker!");
-                }
-            }
-        }
-    }
-
-    public static void deleteMarkers(){
-        for(AreaMarker marker1 : markers){
-            marker1.deleteMarker();
-        }
-    }
-
 }

@@ -59,6 +59,7 @@ public class SaveLoad {
             statesYML.set(path+".cantakechunks", state.canTakeChunks);
             statesYML.set(path+".invasioncooldown", state.invasionCooldown);
             statesYML.set(path+".chunktakecooldown", state.chunkTakeCooldown);
+            statesYML.set(path+".roleid", state.roleId);
             for(int i = 0; i<state.territory.size(); i++){
                 statesYML.set(path+".territory."+String.valueOf(i)+".x", state.territory.get(i).getX());
                 statesYML.set(path+".territory."+String.valueOf(i)+".z", state.territory.get(i).getZ());
@@ -108,15 +109,26 @@ public class SaveLoad {
             Nations.discord.set(path, Nations.discords.get(s));
         }
 
+        for(String s : Help.tipsLevel.keySet()){
+            String path = "level." + s;
+            Nations.tips_level.set(path, Help.tipsLevel.get(s));
+        }
+
         for(String s : Nations.stateCooldown.keySet()){
             String path = "statecooldown." + s;
             Nations.player_cooldowns.set(path, Nations.stateCooldown.get(s));
+        }
+
+        for(String s : Nations.inactiveTime.keySet()){
+            String path = "players." + s;
+            Nations.inactive_time.set(path, Nations.inactiveTime.get(s));
         }
 
         try {
             statesYML.save();
             unconfirmed_states.save();
             tnt_launchers.save();
+            Nations.inactive_time.save();
             Nations.discord.save();
             Nations.player_cooldowns.save();
         }catch (IOException e){
@@ -125,13 +137,15 @@ public class SaveLoad {
     }
 
     public static void loadStates(){
+        Nations.states = new ArrayList<>();
+        Nations.unconfirmedStates = new ArrayList<>();
         try{
             Nations.statesYML.reload();
             Nations.unconfirmed_states.reload();
             Nations.tnt_launchers.reload();
             Nations.player_cooldowns.reload();
-            Nations.config.reload();
             Nations.discord.reload();
+            Nations.inactive_time.reload();
         }catch(IOException e){
 
         }
@@ -157,9 +171,10 @@ public class SaveLoad {
                 state.canTakeChunks = Nations.statesYML.getInt(path+".cantakechunks");
                 state.invasionCooldown = Nations.statesYML.getInt(path + ".invasioncooldown");
                 state.chunkTakeCooldown = Nations.statesYML.getInt(path+".chunktakecooldown");
+                state.roleId = Nations.statesYML.getLong(path+".roleid");
                 state.deletionCooldown = 0;
                 Nations.states.add(state);
-                System.out.println(state.name + "loaded");
+                System.out.println(state.name + " loaded");
             }
         }
 
@@ -204,27 +219,9 @@ public class SaveLoad {
                 state.invasionCooldown = Nations.unconfirmed_states.getInt(path + ".invasioncooldown");
                 state.chunkTakeCooldown = Nations.unconfirmed_states.getInt(path+".chunktakecooldown");
                 state.deletionCooldown = Nations.unconfirmed_states.getInt(path+".deletioncooldown");
-                Nations.states.add(state);
-                System.out.println(state.name + "loaded");
-            }
-        }
-
-        if(Nations.config.getSection("levels") != null){
-            for(Object s : Nations.config.getSection("levels").getKeys()){
-
-                String path = "levels." + s;
-                List<Material> mats = new ArrayList<>();
-                List<String> matstring = Nations.config.getStringList(path + ".availablecrafts");
-                HashMap<Material, Integer> toUpgrade = new HashMap<>();
-                for(String s1 : matstring){
-                    mats.add(Material.getMaterial(s1));
-                }
-                for(Object s1 : Nations.config.getSection(path + ".toupgrade").getKeys()){
-                    int amount = Nations.config.getInt(path+".toupgrade." + s1);
-                    toUpgrade.put(Material.getMaterial(s1.toString()), amount);
-                }
-                Level level = new Level(Integer.parseInt((String) s), mats, toUpgrade);
-                Events.levels.add(level);
+                state.roleId = 0;
+                Nations.unconfirmedStates.add(state);
+                System.out.println(state.name + " (unconfirmed) loaded");
             }
         }
 
@@ -235,12 +232,28 @@ public class SaveLoad {
             }
         }
 
+        if(Nations.tips_level.getSection("level") != null){
+            for(Object s : Nations.tips_level.getSection("level").getKeys()){
+                int tips_level = Nations.tips_level.getInt("level." + s);
+                Help.tipsLevel.put((String) s, tips_level);
+            }
+        }
+
         if(Nations.player_cooldowns.getSection("statecooldown") != null){
             for(Object s : Nations.player_cooldowns.getSection("statecooldown").getKeys()){
-                int cooldown = Nations.player_cooldowns.getInt((String)s);
+                int cooldown = Nations.player_cooldowns.getInt("statecooldown."+(String)s);
                 Nations.stateCooldown.put((String) s, cooldown);
             }
         }
+
+        if(Nations.inactive_time.getSection("players") != null){
+            for(Object s : Nations.inactive_time.getSection("players").getKeys()){
+                int time = Nations.inactive_time.getInt("players."+(String)s);
+                Nations.inactiveTime.put((String)s, time);
+            }
+        }
+
+        Configs.reload();
     }
 
 }

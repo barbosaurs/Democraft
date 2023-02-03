@@ -12,4 +12,10 @@ commands:
   discord:
     description: Привязать дискорд
     usage: /<command> <link/code>
-depend: [dynmap]
+  cooldown:
+    description: Кулдаун
+    usage: /<command>
+  democraft:
+    description: Democraft
+    usage: /<command>
+depend: [dynmap, AuthMe]

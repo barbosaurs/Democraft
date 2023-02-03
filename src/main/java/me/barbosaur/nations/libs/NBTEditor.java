@@ -1,4 +1,4 @@
-package me.barbosaur.nations;
+package me.barbosaur.nations.libs;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -1406,7 +1406,7 @@ public final class NBTEditor {
         Map< Object, Object > tags = new HashMap< Object, Object >();
         try {
             if ( getNMSClass( "NBTTagCompound" ).isInstance( tag ) ) {
-                Map< String, Object > tagCompound = ( Map< String, Object > ) NBTCompoundMap.get( tag );
+                Map< String, Object > tagCompound = (Map< String, Object >) NBTCompoundMap.get( tag );
                 for ( String key : tagCompound.keySet() ) {
                     Object value = tagCompound.get( key );
                     if ( getNMSClass( "NBTTagEnd" ).isInstance( value ) ) {

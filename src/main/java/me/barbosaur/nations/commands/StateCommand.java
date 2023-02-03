@@ -2,7 +2,9 @@ package me.barbosaur.nations.commands;
 
 import me.barbosaur.nations.*;
 import me.barbosaur.nations.commands.stateSubcommands.*;
+import me.barbosaur.nations.commands.stateSubcommands.Help;
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.Chunk;
 import org.bukkit.Material;
 import org.bukkit.boss.BarColor;
@@ -42,52 +44,63 @@ public class StateCommand implements TabExecutor {
         subcmds.put("me", new Me());
         subcmds.put("upgrade", new Upgrade());
         subcmds.put("help", new Help());
+        subcmds.put("save", new Save());
+        subcmds.put("load", new Load());
     }
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
 
-        if(((Player) sender).getLocation().getWorld().getName().equalsIgnoreCase("world")) {
-            String subcmd = args[0];
-
-            String p = sender.getName();
-
-            Chunk start = ((Player) sender).getLocation().getChunk();
-
-            StateSubcommand stateSubcommand = (subcmds.get(subcmd));
-
-            if (stateSubcommand != null) {
-                stateSubcommand.executeCommand(args, sender, p, subcmd, start);
-            } else {
-                sender.sendMessage("Неверный аргумент");
+        if(sender instanceof Player) {
+            if (!((Player) sender).getLocation().getWorld().getName().equalsIgnoreCase("world")) {
+                sender.sendMessage(Lang.getLang("incorrect_world"));
+                return true;
             }
-        }else{
-            sender.sendMessage("Вы не в том мире");
         }
+
+        String subcmd = args[0];
+        String p = sender.getName();
+        Chunk start = Bukkit.getWorld("world").getChunkAt(0, 0);
+        if(sender instanceof Player){
+            start = ((Player) sender).getLocation().getChunk();
+        }
+        StateSubcommand stateSubcommand = (subcmds.get(subcmd));
+
+        if (stateSubcommand == null) {
+            sender.sendMessage(Lang.getLang("incorrect_arg"));
+            return true;
+        }
+
+        stateSubcommand.executeCommand(args, sender, p, subcmd, start);
+
         return true;
     }
 
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
+        if(args.length == 1){
+            return new ArrayList<>(StateCommand.subcmds.keySet());
+        }
 
-        if(command.getLabel().equalsIgnoreCase("state")){
-            if(args.length == 1){
-                return new ArrayList<>(StateCommand.subcmds.keySet());
-            }else if (args.length == 2){
-                if(args[0].equalsIgnoreCase("join")){
-                    List<String> strings = new ArrayList<>();
-                    for(State s : Nations.states){
-                        strings.add(s.name);
-                    }
-                    return strings;
-                }else if(args[0].equalsIgnoreCase("color")){
-                    List<String> strings = new ArrayList<>();
-                    strings.addAll(Nations.colors.keySet());
-                    return strings;
+        if (args.length == 2){
+            if(args[0].equalsIgnoreCase("join")){
+                List<String> strings = new ArrayList<>();
+                for(State s : Nations.states){
+                    strings.add(s.name);
                 }
+                return strings;
+            }
+
+            if(args[0].equalsIgnoreCase("color")){
+                List<String> strings = new ArrayList<>();
+                strings.addAll(Nations.colors.keySet());
+                return strings;
             }
         }
+
         return null;
     }
+
+
 
 }

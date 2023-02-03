@@ -1,5 +1,7 @@
-package me.barbosaur.nations;
+package me.barbosaur.nations.libs;
 
+import me.barbosaur.nations.Discord;
+import me.barbosaur.nations.Nations;
 import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.User;

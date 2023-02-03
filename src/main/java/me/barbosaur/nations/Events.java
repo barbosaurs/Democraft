@@ -1,7 +1,10 @@
 package me.barbosaur.nations;
 
+import me.barbosaur.nations.libs.Notifications;
+import me.barbosaur.nations.villageAndPillage.Pillagers;
 import org.bukkit.*;
 import org.bukkit.block.data.type.Bed;
+import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -15,14 +18,25 @@ import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
-import org.bukkit.event.world.PortalCreateEvent;
-import org.bukkit.scheduler.BukkitRunnable;
+import org.bukkit.event.world.ChunkLoadEvent;
+import org.bukkit.generator.structure.Structure;
+import org.bukkit.util.StructureSearchResult;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
 public class Events implements Listener {
+
+    @EventHandler
+    public void onBreakBlock(BlockBreakEvent e){
+        if(e.getBlock().getType().equals(Material.DIAMOND_BLOCK)){
+            e.getPlayer().sendMessage("АЛМАЗНЫЙ БЛОК!");
+        }
+    }
+
+
+
 
     public static List<Level> levels = new ArrayList<>();
 
@@ -39,7 +53,8 @@ public class Events implements Listener {
     public void onTrade(InventoryClickEvent e){
         if(e.getInventory().getType().equals(InventoryType.MERCHANT)){
             Material t = e.getCurrentItem().getType();
-            if(t.equals(Material.DIAMOND_HELMET) || t.equals(Material.ENCHANTED_BOOK) || t.equals(Material.DIAMOND_CHESTPLATE)
+            if(t.equals(Material.DIAMOND_HELMET) || t.equals(Material.ENCHANTED_BOOK)
+                    || t.equals(Material.DIAMOND_CHESTPLATE)
                     || t.equals(Material.DIAMOND_LEGGINGS) || t.equals(Material.DIAMOND_BOOTS)){
                 e.setCancelled(true);
             }
@@ -59,6 +74,8 @@ public class Events implements Listener {
             if(TntLaunchers.tntShooters.containsKey(e.getEntity())) {
                 String player = TntLaunchers.tntShooters.get(e.getEntity()).getDisplayName();
                 if (!State.IsCitizen(player)) {
+                    LivingEntity entity = (LivingEntity) e.getEntity();
+                    entity.setHealth(0.0);
                     e.setCancelled(true);
                 }else{
                     Location loc = e.getEntity().getLocation();
@@ -66,6 +83,8 @@ public class Events implements Listener {
                             + loc.getY() + ", " + loc.getZ() + ")");
                 }
             }else{
+                LivingEntity entity = (LivingEntity) e.getEntity();
+                entity.setHealth(0.0);
                 e.setCancelled(true);
             }
         }
@@ -100,12 +119,6 @@ public class Events implements Listener {
             Nations.stateCooldown.put(e.getPlayer().getDisplayName(), 0);
         }
 
-        new BukkitRunnable() {
-            @Override
-            public void run() {
-                e.getPlayer().sendMessage("Пропишите команду /state help, чтобы начать свой путь");
-            }
-        }.runTaskLater(Nations.getPlugin(), 60);
     }
 
     private static HashMap<Player, Chunk> playersInClaiming = new HashMap<>();
@@ -131,14 +144,30 @@ public class Events implements Listener {
     }
 
     @EventHandler
+    public void onChunk(ChunkLoadEvent e){
+
+        World w = e.getChunk().getWorld();
+        StructureSearchResult searchResult = w.locateNearestStructure(e.getChunk().getBlock(8, 60, 8).getLocation(), Structure.PILLAGER_OUTPOST, 8, false);
+        if(searchResult == null) {
+            return;
+        }
+
+        if(State.ContainsChunk(Pillagers.pillagerTerritory, e.getChunk())){
+            return;
+        }
+
+        Pillagers.pillagerTerritory.add(e.getChunk());
+    }
+
+    @EventHandler
     public void onPortal(PlayerTeleportEvent e){
 
-        if(e.getCause().equals(PlayerTeleportEvent.TeleportCause.NETHER_PORTAL) && State.getLevel(e.getPlayer().getDisplayName()) < 4){
+        if(e.getCause().equals(PlayerTeleportEvent.TeleportCause.NETHER_PORTAL) && State.getLevel(e.getPlayer().getDisplayName()) < State.netherLevel){
             e.setCancelled(true);
-            e.getPlayer().sendMessage("Ад доступен с 4 уровня развития государства");
-        }else if(e.getCause().equals(PlayerTeleportEvent.TeleportCause.END_PORTAL) && State.getLevel(e.getPlayer().getDisplayName()) < 5){
+            e.getPlayer().sendMessage("Ад доступен с " + State.netherLevel + " уровня развития государства");
+        }else if(e.getCause().equals(PlayerTeleportEvent.TeleportCause.END_PORTAL) && State.getLevel(e.getPlayer().getDisplayName()) < State.endLevel){
             e.setCancelled(true);
-            e.getPlayer().sendMessage("Энд доступен с 5 уровня государства");
+            e.getPlayer().sendMessage("Энд доступен с " + State.endLevel + " уровня государства");
         }
 
     }
@@ -151,13 +180,13 @@ public class Events implements Listener {
         for(Level level1 : levels){
 
             if(level1.level>level){
-                for(Material material : level1.availableCrafts){
-                    cantUse.add(material);
-                }
+                cantUse.addAll(level1.availableCrafts);
             }
 
         }
 
         return cantUse.contains(item);
     }
+
+
 }
